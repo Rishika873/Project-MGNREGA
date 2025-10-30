@@ -6,7 +6,8 @@ const Dashboard = () => {
   const [stateName, setStateName] = useState("");
   const [districtName, setDistrictName] = useState("");
   const [loading, setLoading] = useState(false);
-  const [data, setData] = useState(null);
+  const [data, setData] = useState([]);
+
   const [error, setError] = useState("");
 
 const fetchData = async () => {
@@ -44,7 +45,10 @@ const fetchData = async () => {
   }
 };
 
-const materialCost = parseFloat(data[0]?.Material_and_skilled_Wages || 0);
+const materialCost = data && data.length > 0 
+  ? parseFloat(data[0]?.Material_and_skilled_Wages || 0)
+  : 0;
+
 
 
   const handleKeyPress = (e) => {
