@@ -24,8 +24,13 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
+import BackgroundImage from "../assets/mgnrega01.jpg"
+import { useNavigate } from "react-router-dom";
+
 
 export default function Home() {
+
+  const navigate = useNavigate();
   const [districtData, setDistrictData] = useState({
     households: "1,23,000",
     wages: "₹45 करोड़",
@@ -67,7 +72,7 @@ export default function Home() {
         className="relative w-full h-[85vh] flex items-center justify-center bg-cover bg-center"
         style={{
           backgroundImage:
-            "url('https://images.unsplash.com/photo-1599491445869-0b2b0a0f6f1a?auto=format&fit=crop&w=1500&q=80')",
+            `url(${BackgroundImage})`,
         }}
       >
         <div className="absolute inset-0 bg-black/50"></div>
@@ -93,7 +98,8 @@ export default function Home() {
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-semibold px-6 py-3 rounded-full text-lg shadow-lg transition flex items-center justify-center mx-auto"
+            className="bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-semibold px-6 py-3 rounded-full text-lg shadow-lg transition flex items-center justify-center mx-auto 
+            cursor-pointer" onClick={() => navigate('/dashboard')}
           >
             🔍 देखें प्रदर्शन (View Performance)
           </motion.button>

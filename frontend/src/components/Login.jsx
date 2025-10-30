@@ -4,27 +4,44 @@ import { API_URL } from "../api";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { Lock, Mail, Shield } from "lucide-react";
-import logo from "../assets/logo-svg.svg";
+import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { loginSuccess, setUserFromToken } from "../redux/authSlice";
+
+import { useEffect } from "react";
 
 const Login = () => {
-  const [formData, setFormData] = useState({ email: "", password: "" });
+const [formData, setFormData] = useState({ email: "", password: "" });
   const [language, setLanguage] = useState("en");
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  try {
+    const res = await axios.post(`${API_URL}/auth/login`, formData);
+    const token = res.data.token;
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const res = await axios.post(`${API_URL}/auth/login`, formData);
-      localStorage.setItem("token", res.data.token);
-      toast.success("Login successful!");
-      setFormData({ email: "", password: "" });
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Invalid credentials!");
-    }
-  };
+    dispatch(loginSuccess(token)); // ✅ saves token + decoded user
+
+    toast.success("Login successful!");
+    setFormData({ email: "", password: "" });
+
+    setTimeout(() => {
+      navigate("/");
+    }, 1000);
+  } catch (error) {
+    toast.error(error.response?.data?.message || "Invalid credentials!");
+  }
+};
+useEffect(() => {
+  dispatch(setUserFromToken());
+}, [dispatch]);
+
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-green-50">

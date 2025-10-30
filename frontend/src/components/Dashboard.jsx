@@ -18,7 +18,7 @@ const fetchData = async () => {
 
   setError("");
   setLoading(true);
-  setData(null);
+  setData([]);
 
   try {
    const res = await fetch("http://localhost:5000/api/mgnrega/performance", {
@@ -48,8 +48,6 @@ const fetchData = async () => {
 const materialCost = data && data.length > 0 
   ? parseFloat(data[0]?.Material_and_skilled_Wages || 0)
   : 0;
-
-
 
   const handleKeyPress = (e) => {
     if (e.key === 'Enter') {
@@ -376,7 +374,8 @@ console.log("Total Expenditure:", formattedExpenditure);
                     <p className="text-gray-600 text-xs font-medium mb-1">सामग्री खर्च</p>
                     <p className="text-gray-500 text-xs mb-2">Material Cost</p>
                     <p className="text-2xl font-bold text-gray-800">
-                      ₹{((data[0]?.materialCost  || 0) / 1).toFixed(2)} <span className="text-sm text-gray-500">Cr</span>
+                     ₹{materialCost.toLocaleString('en-IN')} <span className="text-sm text-gray-500">Cr</span>
+
                     </p>
                   </div>
                 </div>

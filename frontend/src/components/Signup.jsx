@@ -5,10 +5,12 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { UserPlus, Mail, Lock, Shield } from "lucide-react";
 import logo from "../assets/logo-svg.svg";
+import { useNavigate } from "react-router-dom"; // ✅ Import useNavigate
 
 const Signup = () => {
   const [formData, setFormData] = useState({ name: "", email: "", password: "" });
   const [language, setLanguage] = useState("en");
+  const navigate = useNavigate(); // ✅ Initialize navigate
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -22,6 +24,12 @@ const Signup = () => {
         language === "en" ? "Signup successful!" : "साइन अप सफल हुआ!"
       );
       setFormData({ name: "", email: "", password: "" });
+
+      // ✅ Redirect to login after showing success toast
+      setTimeout(() => {
+        navigate("/login");
+      }, 1500); // 1.5 second delay so the toast is visible
+
     } catch (error) {
       toast.error(
         error.response?.data?.message ||
