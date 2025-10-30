@@ -1,13 +1,13 @@
 import React, { useState } from "react";
 import { Globe, Menu, X, Info } from "lucide-react";
 import logo from "../assets/logo-svg.svg";
-import AuthModal from "./AuthModal";
+import { useNavigate } from "react-router-dom";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [language, setLanguage] = useState("en");
   const [showAuthModal, setShowAuthModal] = useState(false);
-
+const navigate = useNavigate();
   const toggleLanguage = () => {
     setLanguage(language === "en" ? "hi" : "en");
   };
@@ -33,8 +33,8 @@ const Navbar = () => {
 
          {/* ✅ Login / Signup Button opens Auth Modal */}
 <button
-  onClick={() => setShowAuthModal(true)}
-  className="bg-white text-orange-600 px-4 py-2 rounded-md font-semibold hover:bg-orange-100 transition"
+  onClick={() => navigate("/login")}
+  className="hover:text-gray-100 transition"
 >
   {language === "en" ? "Login / Signup" : "लॉगिन / साइनअप"}
 </button>
@@ -77,7 +77,7 @@ const Navbar = () => {
       </nav>
 
       {/* ✅ Auth Modal (outside navbar) */}
-      <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
+      {/* <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} /> */}
     </>
   );
 };
