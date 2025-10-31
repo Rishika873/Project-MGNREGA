@@ -5,6 +5,10 @@ import Login from "./components/Login";
 import Signup from "./components/Signup";
 import Home from "./components/Home";
 import Dashboard from "./components/Dashboard";
+import PersonalInfo from "./components/PersonalInfo";
+import Settings from "./components/Settings";
+import Help from "./components/Help";
+import ForgetPassword from "./components/ForgetPassword";
 
 
 function App() {
@@ -16,6 +20,11 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/personal-info" element={<PersonalInfo />} />
+        <Route path="/settings" element={<Settings />} />
+        <Route path="/help" element={<Help />} />
+        <Route path="/forget-password" element={<ForgetPassword />} />
+
       </Routes>
     </Router>
   );

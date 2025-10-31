@@ -4,16 +4,23 @@ import dotenv from "dotenv";
 import cors from "cors";
 import authRoutes from "./routes/authRoutes.js";
 import mgnregaRoutes from "./routes/mgnregaRoutes.js";
+import geoRoutes from "./routes/geoRoutes.js"
 
 dotenv.config();
 const app = express();
 
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+  origin: "http://localhost:5173", // your React app URL
+  methods: ["GET", "POST"],
+  credentials: true,
+}));
+
 
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/mgnrega", mgnregaRoutes);
+app.use("/api/geo", geoRoutes);
 
 // Test route
 app.get("/", (req, res) => {

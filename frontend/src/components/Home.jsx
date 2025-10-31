@@ -1,44 +1,70 @@
-import React, { useState } from "react";
+import React, { useState , useEffect } from "react";
 import { motion } from "framer-motion";
-import {
-  Users,
-  IndianRupee,
-  Building2,
-  Leaf,
-  Info,
-  Globe,
-  BarChart3,
-  HeartHandshake,
-} from "lucide-react";
-import {
-  LineChart,
-  Line,
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell,
-  XAxis,
-  YAxis,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from "recharts";
+import {Users,IndianRupee,Building2,Leaf,Info,Globe,BarChart3,HeartHandshake,} from "lucide-react";
+import {LineChart,Line,BarChart,Bar,PieChart,Pie,Cell,XAxis,YAxis,Tooltip,Legend,ResponsiveContainer} from "recharts";
 import BackgroundImage from "../assets/mgnrega01.jpg"
 import { useNavigate } from "react-router-dom";
 
+import { useSelector } from "react-redux";
+import axios from "axios";
 
-export default function Home() {
+
+export default function Home({stateName, districtName }) {
 
   const navigate = useNavigate();
-  const [districtData, setDistrictData] = useState({
-    households: "1,23,000",
-    wages: "₹45 करोड़",
-    works: "2,345",
-    women: "48%",
-    month: "अक्टूबर",
-    year: "2025",
-  });
+  const { state, district } = useSelector((s) => s.location);
+  const [data, setData] = useState(null);
+  const API_KEY = import.meta.env.DATA_API_KEY;
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState("");
+
+   
+const fetchData = async () => {
+  console.log("🔵 Sending request to backend...");
+  try {
+    const res = await fetch("http://localhost:5000/api/mgnrega/performance", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ state, district }),
+    });
+
+    console.log("🟢 Response status:", res.status);
+    if (!res.ok) throw new Error("Failed to fetch data");
+
+    const json = await res.json();
+    setData(json.records?.[0] || null);
+  } catch (err) {
+    console.error("❌ Error fetching data:", err);
+    setData(null);
+  }
+};
+
+
+useEffect(() => {
+  console.log("Location changed:", state, district);
+  if (state && district) {
+    fetchData(state, district);
+  }
+}, [state, district]);
+
+
+const districtData = data
+  ? {
+      households: data.Total_Households_Worked?.toLocaleString("en-IN") || "—",
+      wages: `₹${(
+        parseFloat(data.Exp_on_Wages || 0) / 10000000
+      ).toFixed(2)} करोड़`,
+      works: data.Total_No_of_Works_Takenup?.toLocaleString("en-IN") || "—",
+      women: `${
+        ((parseFloat(data.Women_Persondays || 0) /
+          parseFloat(data.Persondays_of_Central_Liability_so_far || 1)) *
+          100).toFixed(2)
+      }%`,
+      month: "नवीनतम", // You can add logic if API includes month info
+      year: "2025",
+    }
+  : null;
+
 
   const workData = [
     { month: "जन", work: 120 },
@@ -106,73 +132,87 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 📊 DISTRICT PERFORMANCE SECTION */}
-      <section className="py-16 bg-gray-50 text-center">
-        <div className="max-w-6xl mx-auto px-6">
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-10">
-            📊 ज़िला प्रदर्शन (District Performance)
-          </h2>
+{!data ?(
+  <div className="text-center py-16 bg-gray-100">
+    <h2 className="text-2xl md:text-3xl font-semibold text-gray-700 mb-3">
+      🗺️ अपने ज़िले का प्रदर्शन देखने के लिए
+    </h2>
+    <p className="text-gray-600 mb-6">
+      कृपया ऊपर “Detect My Location” बटन पर क्लिक करें।
+    </p>
+    <button onClick={fetchData}>Fetch Data</button>
 
-          <p className="text-gray-600 mb-8 text-lg">
-            माह: <span className="font-semibold">{districtData.month}</span> | वर्ष:{" "}
-            <span className="font-semibold">{districtData.year}</span>
+  </div>
+) : (
+  // 📊 DISTRICT PERFORMANCE SECTION
+  <section className="py-16 bg-gray-50 text-center">
+    <div className="max-w-6xl mx-auto px-6">
+      <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-10">
+        📊 ज़िला प्रदर्शन (District Performance)
+      </h2>
+
+      <p className="text-gray-600 mb-8 text-lg">
+        माह: <span className="font-semibold">{districtData.month}</span> | वर्ष:{" "}
+        <span className="font-semibold">{districtData.year}</span>
+      </p>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+        <motion.div
+          whileHover={{ scale: 1.05 }}
+          className="bg-white p-6 rounded-2xl shadow-md flex flex-col items-center"
+        >
+          <Users className="text-green-600 w-12 h-12 mb-4" />
+          <h3 className="font-semibold text-gray-800 text-lg mb-2">
+            👨‍👩‍👧 कुल परिवार (Total Households)
+          </h3>
+          <p className="text-2xl font-bold text-gray-900">
+            {districtData.households}
           </p>
+        </motion.div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              className="bg-white p-6 rounded-2xl shadow-md flex flex-col items-center"
-            >
-              <Users className="text-green-600 w-12 h-12 mb-4" />
-              <h3 className="font-semibold text-gray-800 text-lg mb-2">
-                👨‍👩‍👧 कुल परिवार (Total Households)
-              </h3>
-              <p className="text-2xl font-bold text-gray-900">
-                {districtData.households}
-              </p>
-            </motion.div>
+        <motion.div
+          whileHover={{ scale: 1.05 }}
+          className="bg-white p-6 rounded-2xl shadow-md flex flex-col items-center"
+        >
+          <IndianRupee className="text-yellow-600 w-12 h-12 mb-4" />
+          <h3 className="font-semibold text-gray-800 text-lg mb-2">
+            💰 मजदूरी दी गई (Wages Paid)
+          </h3>
+          <p className="text-2xl font-bold text-gray-900">
+            {districtData.wages}
+          </p>
+        </motion.div>
 
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              className="bg-white p-6 rounded-2xl shadow-md flex flex-col items-center"
-            >
-              <IndianRupee className="text-yellow-600 w-12 h-12 mb-4" />
-              <h3 className="font-semibold text-gray-800 text-lg mb-2">
-                💰 मजदूरी दी गई (Wages Paid)
-              </h3>
-              <p className="text-2xl font-bold text-gray-900">
-                {districtData.wages}
-              </p>
-            </motion.div>
+        <motion.div
+          whileHover={{ scale: 1.05 }}
+          className="bg-white p-6 rounded-2xl shadow-md flex flex-col items-center"
+        >
+          <Building2 className="text-blue-600 w-12 h-12 mb-4" />
+          <h3 className="font-semibold text-gray-800 text-lg mb-2">
+            🧱 पूर्ण कार्य (Work Completed)
+          </h3>
+          <p className="text-2xl font-bold text-gray-900">
+            {districtData.works}
+          </p>
+        </motion.div>
 
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              className="bg-white p-6 rounded-2xl shadow-md flex flex-col items-center"
-            >
-              <Building2 className="text-blue-600 w-12 h-12 mb-4" />
-              <h3 className="font-semibold text-gray-800 text-lg mb-2">
-                🧱 पूर्ण कार्य (Work Completed)
-              </h3>
-              <p className="text-2xl font-bold text-gray-900">
-                {districtData.works}
-              </p>
-            </motion.div>
+        <motion.div
+          whileHover={{ scale: 1.05 }}
+          className="bg-white p-6 rounded-2xl shadow-md flex flex-col items-center"
+        >
+          <Leaf className="text-green-700 w-12 h-12 mb-4" />
+          <h3 className="font-semibold text-gray-800 text-lg mb-2">
+            🌾 महिला भागीदारी (Women Participation)
+          </h3>
+          <p className="text-2xl font-bold text-gray-900">
+            {districtData.women}
+          </p>
+        </motion.div>
+      </div>
+    </div>
+  </section>
+)}
 
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              className="bg-white p-6 rounded-2xl shadow-md flex flex-col items-center"
-            >
-              <Leaf className="text-green-700 w-12 h-12 mb-4" />
-              <h3 className="font-semibold text-gray-800 text-lg mb-2">
-                🌾 महिला भागीदारी (Women Participation)
-              </h3>
-              <p className="text-2xl font-bold text-gray-900">
-                {districtData.women}
-              </p>
-            </motion.div>
-          </div>
-        </div>
-      </section>
 
       {/* 📉 CHARTS / VISUAL INSIGHTS SECTION */}
       <section className="py-20 bg-white">

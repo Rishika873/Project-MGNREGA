@@ -1,24 +1,105 @@
-import React, { useEffect, useState } from "react";
-import { Globe, Menu, X, Info, Shield, User, LogOut } from "lucide-react";
+import {
+  Globe,
+  Menu,
+  X,
+  Info,
+  Shield,
+  User,
+  LogOut,
+  MapPin,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import InfoDropdown from "./InfoDropdown";
 import { useSelector, useDispatch } from "react-redux";
 import { logout, setUserFromToken } from "../redux/authSlice";
 import { motion, AnimatePresence } from "framer-motion";
+import { useState, useEffect } from "react";
+import { setLocation as setGlobalLocation } from "../redux/locationSlice";
+
+
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [language, setLanguage] = useState("en");
+  const [location, setLocation] = useState({ state: "", district: "" });
+  const [isDetecting, setIsDetecting] = useState(false);
   const { user, token } = useSelector((state) => state.auth);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
   const dispatch = useDispatch();
   const navigate = useNavigate();
+
+  const toggleLanguage = () => setLanguage(language === "en" ? "hi" : "en");
+  const handleLogout = () => dispatch(logout());
+
+  // 🧭 Detect location only when user clicks
+const detectLocation = async () => {
+  try {
+    if (!("geolocation" in navigator)) {
+      alert("❌ Geolocation not supported in your browser.");
+      return;
+    }
+
+    setIsDetecting(true);
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords; // ✅ Correct names
+
+        console.log("Detected location:", latitude, longitude);
+
+        // ✅ Use correct variables here
+        const res = await fetch(
+          `http://localhost:5000/api/geo/reverse?lat=${latitude}&lon=${longitude}`
+        );
+
+        if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
+
+        const data = await res.json();
+
+        const state = data?.address?.state || "";
+        const district =
+          data?.address?.county ||
+          data?.address?.state_district ||
+          data?.address?.city ||
+          "";
+
+        const newLocation = { state, district };
+        setLocation(newLocation);
+
+        // 💾 Save to Redux + localStorage
+        dispatch(setGlobalLocation(newLocation));
+        localStorage.setItem("userLocation", JSON.stringify(newLocation));
+
+        setIsDetecting(false);
+      },
+      (error) => {
+        console.error("Location error:", error);
+        alert("⚠️ Please enable location access and try again.");
+        setIsDetecting(false);
+      }
+    );
+  } catch (error) {
+    console.error("Error detecting location:", error);
+    setIsDetecting(false);
+  }
+};
+
+
+useEffect(() => {
+  if (token) dispatch(setUserFromToken());
+
+  // 💾 Load saved location if available
+  const savedLocation = localStorage.getItem("userLocation");
+  if (savedLocation) {
+    setLocation(JSON.parse(savedLocation));
+  }
+}, [token, dispatch]);
+
 
   useEffect(() => {
     if (token) dispatch(setUserFromToken());
   }, [token, dispatch]);
-
-  const toggleLanguage = () => setLanguage(language === "en" ? "hi" : "en");
-  const handleLogout = () => dispatch(logout());
 
   return (
     <nav className="bg-gradient-to-r from-orange-600 via-orange-500 to-amber-400 shadow-md sticky top-0 z-50 backdrop-blur-sm">
@@ -45,10 +126,35 @@ const Navbar = () => {
 
         {/* 🟢 Desktop Menu */}
         <div className="hidden lg:flex items-center space-x-6">
-          {["Home", "About", "Services", "Contact"].map((item, i) => (
+          {/* 📍 Location Display or Button */}
+          {location.state ? (
+            <div className="flex items-center gap-2 text-white bg-white/20 px-3 py-2 rounded-lg border border-white/30 backdrop-blur-sm">
+              <MapPin className="w-4 h-4 text-white" />
+              <span className="text-sm font-medium">
+                {location.district}, {location.state}
+              </span>
+            </div>
+          ) : (
+            <button
+              onClick={detectLocation}
+              disabled={isDetecting}
+              className="flex items-center gap-2 bg-white/20 px-3 py-2 rounded-lg border border-white/30 text-white hover:bg-white/30 transition backdrop-blur-sm"
+            >
+              <MapPin className="w-4 h-4" />
+              {isDetecting
+                ? "Detecting..."
+                : language === "en"
+                ? "Detect My Location"
+                : "मेरा स्थान पता करें"}
+            </button>
+          )}
+
+          {["Home", "About", "Contact"].map((item, i) => (
             <button
               key={i}
-              onClick={() => navigate(item === "Home" ? "/" : `/${item.toLowerCase()}`)}
+              onClick={() =>
+                navigate(item === "Home" ? "/" : `/${item.toLowerCase()}`)
+              }
               className="text-white font-medium relative group transition-all"
             >
               {language === "en"
@@ -67,30 +173,78 @@ const Navbar = () => {
             <Globe className="w-4 h-4" />
             <span>{language === "en" ? "हिन्दी" : "English"}</span>
           </button>
+{user ? (
+  <div className="relative">
+    {/* Profile button */}
+    <div
+      onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+      className="flex items-center gap-3 bg-white text-orange-700 px-4 py-2 rounded-xl shadow hover:shadow-lg transition cursor-pointer"
+    >
+      <User className="w-5 h-5 text-orange-600" />
+      <span className="font-semibold">{user.name}</span>
+    </div>
 
-          {user ? (
-            <div className="flex items-center gap-3 bg-white text-orange-700 px-4 py-2 rounded-xl shadow hover:shadow-lg transition cursor-pointer">
-              <User className="w-5 h-5 text-orange-600" />
-              <span className="font-semibold">{user.name}</span>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleLogout();
-                }}
-                className="ml-2 text-sm flex items-center gap-1 text-red-500 hover:text-red-600 cursor-pointer"
-              >
-                <LogOut className="w-4 h-4" />
-                {language === "en" ? "Logout" : "लॉगआउट"}
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={() => navigate("/login")}
-              className="bg-white text-orange-600 px-6 py-2 rounded-xl font-semibold shadow hover:bg-orange-50 transition cursor-pointer"
-            >
-              {language === "en" ? "Login / Signup" : "लॉगिन / साइनअप"}
-            </button>
-          )}
+    {/* Dropdown menu */}
+    <AnimatePresence>
+      {isDropdownOpen && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg overflow-hidden z-50"
+        >
+          <button
+            onClick={() => {
+              navigate("/personal-info")
+              console.log("Personal Info");
+              setIsDropdownOpen(false);
+            }}
+            className="w-full text-left px-4 py-2 hover:bg-orange-50 transition font-medium text-gray-700"
+          >
+            {language === "en" ? "Personal Information" : "व्यक्तिगत जानकारी"}
+          </button>
+          <button
+            onClick={() => {
+              navigate("/settings")
+              console.log("Settings");
+              setIsDropdownOpen(false);
+            }}
+            className="w-full text-left px-4 py-2 hover:bg-orange-50 transition font-medium text-gray-700"
+          >
+            {language === "en" ? "Settings" : "सेटिंग्स"}
+          </button>
+          <button
+            onClick={() => {
+              navigate("/help")
+              console.log("Help");
+              setIsDropdownOpen(false);
+            }}
+            className="w-full text-left px-4 py-2 hover:bg-orange-50 transition font-medium text-gray-700"
+          >
+            {language === "en" ? "Help" : "सहायता"}
+          </button>
+          <button
+            onClick={() => {
+              handleLogout();
+              setIsDropdownOpen(false);
+            }}
+            className="w-full text-left px-4 py-2 hover:bg-red-50 transition font-medium text-red-500"
+          >
+            {language === "en" ? "Logout" : "लॉगआउट"}
+          </button>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  </div>
+) : (
+  <button
+    onClick={() => navigate("/login")}
+    className="bg-white text-orange-600 px-6 py-2 rounded-xl font-semibold shadow hover:bg-orange-50 transition cursor-pointer"
+  >
+    {language === "en" ? "Login / Signup" : "लॉगिन / साइनअप"}
+  </button>
+)}
+
         </div>
 
         {/* 📱 Mobile Menu Toggle */}
@@ -101,69 +255,6 @@ const Navbar = () => {
           {isOpen ? <X size={28} /> : <Menu size={28} />}
         </button>
       </div>
-
-      {/* 📱 Mobile Menu (Animated) */}
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="lg:hidden bg-white text-gray-800 rounded-b-2xl shadow-md px-6 py-4 space-y-3"
-          >
-            {["Home", "About", "Services", "Contact"].map((item, i) => (
-              <button
-                key={i}
-                onClick={() => {
-                  navigate(item === "Home" ? "/" : `/${item.toLowerCase()}`);
-                  setIsOpen(false);
-                }}
-                className="block w-full text-left text-gray-700 font-medium hover:text-orange-600 transition cursor-pointer"
-              >
-                {language === "en"
-                  ? item
-                  : ["होम", "हमारे बारे में", "सेवाएं", "संपर्क करें"][i]}
-              </button>
-            ))}
-
-            <InfoDropdown />
-            <hr className="border-gray-200" />
-
-            {user ? (
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <User className="w-5 h-5 text-orange-600" />
-                  <span className="font-medium">{user.name}</span>
-                </div>
-                <button
-                  onClick={handleLogout}
-                  className="text-sm text-red-500 hover:text-red-600 font-semibold cursor-pointer"
-                >
-                  {language === "en" ? "Logout" : "लॉगआउट"}
-                </button>
-              </div>
-            ) : (
-              <button
-                onClick={() => {
-                  navigate("/login");
-                  setIsOpen(false);
-                }}
-                className="w-full bg-orange-600 text-white py-2 rounded-lg font-semibold hover:bg-orange-700 transition cursor-pointer"
-              >
-                {language === "en" ? "Login / Signup" : "लॉगिन / साइनअप"}
-              </button>
-            )}
-
-            <button
-              onClick={toggleLanguage}
-              className="mt-3 flex items-center gap-2 text-orange-600 hover:text-orange-700 font-medium"
-            >
-              <Globe className="w-4 h-4" />
-              {language === "en" ? "हिन्दी में देखें" : "View in English"}
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </nav>
   );
 };

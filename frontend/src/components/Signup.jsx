@@ -3,13 +3,14 @@ import axios from "axios";
 import { API_URL } from "../api";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { UserPlus, Mail, Lock, Shield } from "lucide-react";
+import { UserPlus, Mail, Lock, Shield , Eye, EyeOff } from "lucide-react";
 import logo from "../assets/logo-svg.svg";
 import { useNavigate } from "react-router-dom"; // ✅ Import useNavigate
 
 const Signup = () => {
   const [formData, setFormData] = useState({ name: "", email: "", password: "" });
   const [language, setLanguage] = useState("en");
+  const [showPassword, setShowPassword] = useState(false); // New state
   const navigate = useNavigate(); // ✅ Initialize navigate
 
   const handleChange = (e) => {
@@ -39,12 +40,12 @@ const Signup = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-green-50">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-orange-50 to-orange-50">
       <div className="flex items-center justify-center p-4 py-8">
         <div className="w-full max-w-md">
           <div className="bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden">
             {/* Header */}
-            <div className="bg-gradient-to-r from-green-600 to-emerald-500 text-white py-6 px-8">
+            <div className="bg-gradient-to-r from-orange-500 to-orange-500 text-white py-6 px-8">
               <div className="flex items-center justify-center mb-2">
                 <div className="bg-white/10 backdrop-blur-sm p-3 rounded-full">
                   <UserPlus className="w-8 h-8" />
@@ -79,7 +80,7 @@ const Signup = () => {
                     }
                     value={formData.name}
                     onChange={handleChange}
-                    className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
+                    className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition"
                     required
                   />
                 </div>
@@ -102,38 +103,45 @@ const Signup = () => {
                     }
                     value={formData.email}
                     onChange={handleChange}
-                    className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
+                    className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition"
                     required
                   />
                 </div>
               </div>
 
-              {/* Password */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  {language === "en" ? "Password" : "पासवर्ड"}
-                </label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input
-                    type="password"
-                    name="password"
-                    placeholder={
-                      language === "en"
-                        ? "Enter your password"
-                        : "अपना पासवर्ड दर्ज करें"
-                    }
-                    value={formData.password}
-                    onChange={handleChange}
-                    className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
-                    required
-                  />
-                </div>
-              </div>
+             {/* Password */}
+<div>
+  <label className="block text-sm font-semibold text-gray-700 mb-2">
+    {language === "en" ? "Password" : "पासवर्ड"}
+  </label>
+  <div className="relative">
+    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+    <input
+      type={showPassword ? "text" : "password"} // Toggle type
+      name="password"
+      placeholder={
+        language === "en"
+          ? "Enter your password"
+          : "अपना पासवर्ड दर्ज करें"
+      }
+      value={formData.password}
+      onChange={handleChange}
+      className="w-full pl-11 pr-10 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition"
+      required
+    />
+    <button
+      type="button"
+      onClick={() => setShowPassword(!showPassword)}
+      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+    >
+      {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
+    </button>
+  </div>
+</div>
 
               {/* Security Notice */}
-              <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                <p className="text-xs text-green-800 flex items-start gap-2">
+              <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                <p className="text-xs text-orange-800 flex items-start gap-2">
                   <Shield className="w-4 h-4 flex-shrink-0 mt-0.5" />
                   <span>
                     {language === "en"
@@ -146,7 +154,7 @@ const Signup = () => {
               {/* Submit Button */}
               <button
                 type="submit"
-                className="w-full bg-gradient-to-r from-green-600 to-emerald-500 text-white font-semibold py-3 rounded-lg hover:from-green-700 hover:to-emerald-600 transition-all duration-200 shadow-md hover:shadow-lg"
+                className="w-full bg-gradient-to-r from-orange-500 to-orange-500 text-white font-semibold py-3 rounded-lg hover:from-orange-700 hover:to-orange-500 transition-all duration-200 shadow-md hover:shadow-lg"
               >
                 {language === "en" ? "Sign Up" : "साइन अप करें"}
               </button>
@@ -160,7 +168,7 @@ const Signup = () => {
                   : "पहले से खाता है?"}{" "}
                 <a
                   href="/login"
-                  className="text-green-700 font-semibold hover:underline"
+                  className="text-orange-700 font-semibold hover:underline"
                 >
                   {language === "en" ? "Login Here" : "यहां लॉगिन करें"}
                 </a>
@@ -172,7 +180,7 @@ const Signup = () => {
           <div className="mt-4 text-center">
             <button
               onClick={() => setLanguage(language === "en" ? "hi" : "en")}
-              className="text-green-700 hover:text-green-800 font-medium text-sm underline"
+              className="text-orange-700 hover:text-orange-800 font-medium text-sm underline"
             >
               {language === "en" ? "हिन्दी में देखें" : "View in English"}
             </button>
