@@ -10,6 +10,11 @@ const Dashboard = () => {
   const [error, setError] = useState("");
 
   const fetchData = async () => {
+    console.log("✅ DASHBOARD SENDING:", {
+  state: stateName,
+  district: districtName
+});
+
     if (!stateName || !districtName) {
       setError("Please enter both State and District name.");
       return;

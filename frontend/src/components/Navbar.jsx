@@ -57,12 +57,22 @@ const detectLocation = async () => {
 
         const data = await res.json();
 
-        const state = data?.address?.state || "";
-        const district =
-          data?.address?.county ||
-          data?.address?.state_district ||
-          data?.address?.city ||
-          "";
+      let state = data?.address?.state || "";
+let district =
+  data?.address?.district ||
+  data?.address?.city ||
+  data?.address?.county ||
+  data?.address?.state_district ||
+  "";
+
+// ✅ Normalize values
+state = state.replace(/state|union territory|ut|province/gi, "").trim();
+
+district = district
+  .replace(/district|city|division|mandal|tehsil|block/gi, "")
+  .trim();
+
+
 
         const newLocation = { state, district };
         setLocation(newLocation);
@@ -84,6 +94,17 @@ const detectLocation = async () => {
     setIsDetecting(false);
   }
 };
+
+useEffect(() => {
+  const handleDetectRequest = () => {
+    detectLocation(); // ✅ call your existing function
+  };
+
+  window.addEventListener("detect-location", handleDetectRequest);
+
+  return () =>
+    window.removeEventListener("detect-location", handleDetectRequest);
+}, []);
 
 
 useEffect(() => {

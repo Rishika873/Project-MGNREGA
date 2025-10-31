@@ -17,10 +17,19 @@ export default function Home({stateName, districtName }) {
   const API_KEY = import.meta.env.DATA_API_KEY;
   const [error, setError] = useState("");
   const [loading, setLoading] = useState("");
+  const [workdaysTrend, setWorkdaysTrend] = useState([]);
+
 
    
 const fetchData = async () => {
-  console.log("🔵 Sending request to backend...");
+ console.log("❌ HOME SENT:", {
+  state,
+  district
+});
+
+  
+  setLoading(true);   // ✅ Start loading
+
   try {
     const res = await fetch("http://localhost:5000/api/mgnrega/performance", {
       method: "POST",
@@ -29,41 +38,116 @@ const fetchData = async () => {
     });
 
     console.log("🟢 Response status:", res.status);
+
     if (!res.ok) throw new Error("Failed to fetch data");
 
     const json = await res.json();
-    setData(json.records?.[0] || null);
+if (json.records && json.records.length > 0) {
+
+  // ✅ Month normalization map
+const monthMap = {
+  "Apr": "April",
+  "April": "April",
+  "May": "May",
+  "Jun": "June",
+  "June": "June",
+  "Jul": "July",
+  "July": "July",
+  "Aug": "August",
+  "August": "August",
+  "Sep": "September",
+  "Sept": "September",
+  "September": "September",
+  "Oct": "October",
+  "October": "October",
+  "Nov": "November",
+  "November": "November",
+  "Dec": "December",
+  "December": "December",
+  "Jan": "January",
+  "January": "January",
+  "Feb": "February",
+  "February": "February",
+  "Mar": "March",
+  "March": "March",
+};
+
+
+  // ✅ Build Workdays Trend Chart Data (All months)
+  let workdaysTrendData = json.records.map((item) => {
+    const avgDays = Number(item.Average_days_of_employment_provided_per_Household) || 0;
+    const households = Number(item.Total_Households_Worked) || 0;
+
+    const fullMonth = monthMap[item.month] || item.month;
+
+    return {
+      month: fullMonth,
+      workdays: Number(avgDays * households) || 0
+    };
+  });
+
+  // ✅ Correct financial year sorting
+  const monthOrder = [
+  "April","May","June","July","August","September","October",
+  "November","December","January","February","March"
+];
+
+workdaysTrendData.sort((a, b) => 
+  monthOrder.indexOf(a.month) - monthOrder.indexOf(b.month)
+);
+
+
+  // ✅ Save sorted trend
+  setWorkdaysTrend(workdaysTrendData);
+  console.log("✅ CLEAN trend chart data:", workdaysTrendData);
+
+  // ✅ Pick latest record using mapped month
+  const latestRecord = json.records.sort((a, b) => {
+    const monthA = monthMap[a.month] || a.month;
+    const monthB = monthMap[b.month] || b.month;
+    return monthOrder.indexOf(monthB) - monthOrder.indexOf(monthA);
+  })[0];
+
+  setData(latestRecord);
+}
+
+
+else {
+  setData(null);
+}
+
   } catch (err) {
     console.error("❌ Error fetching data:", err);
     setData(null);
+  } finally {
+    setLoading(false);   // ✅ Always stop loading, even on error
   }
 };
 
 
 useEffect(() => {
-  console.log("Location changed:", state, district);
+  console.log("Home.jsx Redux location:", state, district);
   if (state && district) {
-    fetchData(state, district);
+    fetchData();
   }
 }, [state, district]);
 
 
 const districtData = data
   ? {
-      households: data.Total_Households_Worked?.toLocaleString("en-IN") || "—",
-      wages: `₹${(
-        parseFloat(data.Exp_on_Wages || 0) / 10000000
-      ).toFixed(2)} करोड़`,
-      works: data.Total_No_of_Works_Takenup?.toLocaleString("en-IN") || "—",
-      women: `${
-        ((parseFloat(data.Women_Persondays || 0) /
-          parseFloat(data.Persondays_of_Central_Liability_so_far || 1)) *
-          100).toFixed(2)
-      }%`,
-      month: "नवीनतम", // You can add logic if API includes month info
-      year: "2025",
+      families: data.Total_No_of_Works_Takenup || 0, // ✅ same as Dashboard
+      workdays:
+        (data.Average_days_of_employment_provided_per_Household || 0) *
+        (data.Total_Households_Worked || 0),           // ✅ same as Dashboard
+      workers: data.Total_Individuals_Worked || 0,     // ✅ same as Dashboard
+      avgWage: Number(data.Average_Wage_rate_per_day_per_person || 0).toFixed(2),
+
+      month: data.month || "नवीनतम",
+      year: data.fin_year || "2025"
     }
   : null;
+
+
 
 
   const workData = [
@@ -132,154 +216,203 @@ const districtData = data
         </div>
       </section>
 
-{!data ?(
-  <div className="text-center py-16 bg-gray-100">
-    <h2 className="text-2xl md:text-3xl font-semibold text-gray-700 mb-3">
-      🗺️ अपने ज़िले का प्रदर्शन देखने के लिए
+
+     {/* ✅ CASE 1: User has NOT detected location */}
+{(!state || !district) && (
+  <div className="py-20 bg-gray-50 text-center">
+    <h2 className="text-3xl font-bold text-gray-800 mb-4">
+      📍 अपने ज़िले का मनरेगा प्रदर्शन देखने के लिए
     </h2>
-    <p className="text-gray-600 mb-6">
-      कृपया ऊपर “Detect My Location” बटन पर क्लिक करें।
+
+    <p className="text-gray-600 text-lg mb-6">
+      कृपया नीचे दिए गए बटन पर क्लिक करके अपना स्थान पता करें।
     </p>
-    <button onClick={fetchData}>Fetch Data</button>
+
+   <button
+  onClick={() => {
+    const e = new CustomEvent("detect-location");
+    window.dispatchEvent(e);
+  }}
+  className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-xl font-semibold shadow-lg transition"
+>
+  🔎 Detect My Location
+</button>
 
   </div>
-) : (
-  // 📊 DISTRICT PERFORMANCE SECTION
-  <section className="py-16 bg-gray-50 text-center">
+)}
+
+{/* ✅ CASE 2: Location detected but NO data loaded yet */}
+{state && district && !loading && !data && (
+  <div className="py-20 bg-gray-50 text-center">
+    <h2 className="text-2xl font-bold text-gray-800 mb-4">
+      ⚠️ डेटा उपलब्ध नहीं — कृपया पुनः प्रयास करें
+    </h2>
+
+    <button
+      onClick={fetchData}
+      className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-xl font-semibold shadow-lg transition"
+    >
+      🔄 Fetch Data
+    </button>
+  </div>
+)}
+
+{/* ✅ CASE 3: Data is available → show district performance */}
+{data && (
+  <div className="py-16 bg-gray-50">
     <div className="max-w-6xl mx-auto px-6">
-      <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-10">
-        📊 ज़िला प्रदर्शन (District Performance)
+      
+      <h2 className="text-3xl md:text-4xl font-extrabold text-gray-800 mb-6 text-center">
+        📊 ज़िला मनरेगा प्रदर्शन
       </h2>
 
-      <p className="text-gray-600 mb-8 text-lg">
-        माह: <span className="font-semibold">{districtData.month}</span> | वर्ष:{" "}
-        <span className="font-semibold">{districtData.year}</span>
+      <p className="text-center text-gray-600 mb-12 text-lg">
+        📅 {districtData.month} • {districtData.year}
       </p>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+
+        {/* ✅ Total Families */}
         <motion.div
           whileHover={{ scale: 1.05 }}
-          className="bg-white p-6 rounded-2xl shadow-md flex flex-col items-center"
+          className="bg-white p-6 rounded-2xl shadow-xl border-l-4 border-green-500"
         >
-          <Users className="text-green-600 w-12 h-12 mb-4" />
-          <h3 className="font-semibold text-gray-800 text-lg mb-2">
-            👨‍👩‍👧 कुल परिवार (Total Households)
-          </h3>
-          <p className="text-2xl font-bold text-gray-900">
-            {districtData.households}
+          <div className="w-14 h-14 rounded-xl bg-green-100 flex items-center justify-center mb-4">
+            <Users className="text-green-600" size={32} />
+          </div>
+          <h3 className="font-semibold text-gray-700 text-lg mb-1">कुल परिवार</h3>
+          <p className="text-3xl font-bold text-gray-900">
+            {districtData.families.toLocaleString("en-IN")}
           </p>
         </motion.div>
 
+        {/* ✅ Total Workdays */}
         <motion.div
           whileHover={{ scale: 1.05 }}
-          className="bg-white p-6 rounded-2xl shadow-md flex flex-col items-center"
+          className="bg-white p-6 rounded-2xl shadow-xl border-l-4 border-blue-500"
         >
-          <IndianRupee className="text-yellow-600 w-12 h-12 mb-4" />
-          <h3 className="font-semibold text-gray-800 text-lg mb-2">
-            💰 मजदूरी दी गई (Wages Paid)
-          </h3>
-          <p className="text-2xl font-bold text-gray-900">
-            {districtData.wages}
+          <div className="w-14 h-14 rounded-xl bg-blue-100 flex items-center justify-center mb-4">
+            <Building2 className="text-blue-600" size={32} />
+          </div>
+          <h3 className="font-semibold text-gray-700 text-lg mb-1">कुल कार्यदिवस</h3>
+          <p className="text-3xl font-bold text-gray-900">
+            {districtData.workdays.toLocaleString("en-IN")}
           </p>
         </motion.div>
 
+        {/* ✅ Total Workers */}
         <motion.div
           whileHover={{ scale: 1.05 }}
-          className="bg-white p-6 rounded-2xl shadow-md flex flex-col items-center"
+          className="bg-white p-6 rounded-2xl shadow-xl border-l-4 border-purple-500"
         >
-          <Building2 className="text-blue-600 w-12 h-12 mb-4" />
-          <h3 className="font-semibold text-gray-800 text-lg mb-2">
-            🧱 पूर्ण कार्य (Work Completed)
-          </h3>
-          <p className="text-2xl font-bold text-gray-900">
-            {districtData.works}
+          <div className="w-14 h-14 rounded-xl bg-purple-100 flex items-center justify-center mb-4">
+            <Users className="text-purple-600" size={32} />
+          </div>
+          <h3 className="font-semibold text-gray-700 text-lg mb-1">कुल मजदूर</h3>
+          <p className="text-3xl font-bold text-gray-900">
+            {districtData.workers.toLocaleString("en-IN")}
           </p>
         </motion.div>
 
+        {/* ✅ Avg Wage */}
         <motion.div
           whileHover={{ scale: 1.05 }}
-          className="bg-white p-6 rounded-2xl shadow-md flex flex-col items-center"
+          className="bg-white p-6 rounded-2xl shadow-xl border-l-4 border-yellow-500"
         >
-          <Leaf className="text-green-700 w-12 h-12 mb-4" />
-          <h3 className="font-semibold text-gray-800 text-lg mb-2">
-            🌾 महिला भागीदारी (Women Participation)
-          </h3>
-          <p className="text-2xl font-bold text-gray-900">
-            {districtData.women}
+          <div className="w-14 h-14 rounded-xl bg-yellow-100 flex items-center justify-center mb-4">
+            <IndianRupee className="text-yellow-600" size={32} />
+          </div>
+          <h3 className="font-semibold text-gray-700 text-lg mb-1">औसत मजदूरी / दिन</h3>
+          <p className="text-3xl font-bold text-gray-900">
+            ₹{districtData.avgWage}
           </p>
         </motion.div>
+
       </div>
     </div>
-  </section>
+  </div>
 )}
 
 
+
+
       {/* 📉 CHARTS / VISUAL INSIGHTS SECTION */}
-      <section className="py-20 bg-white">
-        <div className="max-w-6xl mx-auto px-6 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-12">
-            📈 दृश्य अंतर्दृष्टि (Visual Insights)
-          </h2>
+      {data && (
+<section className="py-20 bg-white">
+  <div className="max-w-6xl mx-auto px-6">
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-            {/* Line Chart */}
-            <div className="bg-gray-50 rounded-2xl p-6 shadow-md">
-              <h3 className="text-lg font-semibold text-gray-700 mb-4">
-                🧱 कार्य पूर्ण प्रति माह (Work Completed per Month)
-              </h3>
-              <ResponsiveContainer width="100%" height={250}>
-                <LineChart data={workData}>
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <Tooltip />
-                  <Line type="monotone" dataKey="work" stroke="#22c55e" strokeWidth={3} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
+    <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-12 text-center">
+      📈 दृश्य अंतर्दृष्टि (Visual Insights)
+    </h2>
 
-            {/* Bar Chart */}
-            <div className="bg-gray-50 rounded-2xl p-6 shadow-md">
-              <h3 className="text-lg font-semibold text-gray-700 mb-4">
-                💰 मजदूरी भुगतान प्रति माह (Wages Paid across Months)
-              </h3>
-              <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={wageData}>
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="wages" fill="#facc15" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
 
-            {/* Pie Chart */}
-            <div className="bg-gray-50 rounded-2xl p-6 shadow-md">
-              <h3 className="text-lg font-semibold text-gray-700 mb-4">
-                👩‍🌾 महिला बनाम पुरुष (Women vs Men Participation)
-              </h3>
-              <ResponsiveContainer width="100%" height={250}>
-                <PieChart>
-                  <Pie
-                    data={genderData}
-                    dataKey="value"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={80}
-                    label
-                  >
-                    {genderData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index]} />
-                    ))}
-                  </Pie>
-                  <Legend />
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* Line Chart */}
+  <div className="bg-gray-50 rounded-2xl p-6 shadow-md w-full h-[320px]">
+  <h3 className="text-lg font-semibold text-gray-700 mb-4">
+    🧱 कार्य पूर्ण प्रति माह
+  </h3>
+
+<ResponsiveContainer width="100%" height={250}>
+
+  <LineChart data={workdaysTrend}>
+    <XAxis dataKey="month" />
+    <YAxis />
+    <Tooltip />
+    <Line type="monotone" dataKey="workdays" stroke="#22c55e" strokeWidth={3} />
+  </LineChart>
+</ResponsiveContainer>
+
+</div>
+
+
+      {/* Bar Chart */}
+      <div className="bg-gray-50 rounded-2xl p-6 shadow-md w-full h-[320px]">
+        <h3 className="text-lg font-semibold text-gray-700 mb-4">
+          💰 मजदूरी भुगतान प्रति माह
+        </h3>
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={wageData}>
+            <XAxis dataKey="month" />
+            <YAxis />
+            <Tooltip />
+            <Bar dataKey="wages" fill="#facc15" />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* Pie Chart */}
+      <div className="bg-gray-50 rounded-2xl p-6 shadow-md w-full h-[320px]">
+        <h3 className="text-lg font-semibold text-gray-700 mb-4">
+          👩‍🌾 महिला बनाम पुरुष
+        </h3>
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie
+              data={genderData}
+              dataKey="value"
+              nameKey="name"
+              cx="50%"
+              cy="50%"
+              outerRadius={90}
+              label
+            >
+              {genderData.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={COLORS[index]} />
+              ))}
+            </Pie>
+            <Legend />
+            <Tooltip />
+          </PieChart>
+        </ResponsiveContainer>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+      )}
 
       {/* 🙋‍♀️ ABOUT SECTION */}
       <section className="py-20 bg-gradient-to-b from-green-50 to-white text-center">
