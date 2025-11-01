@@ -10,14 +10,17 @@ dotenv.config();
 const app = express();
 
 app.use(express.json());
-app.use(cors({
-origin: [
-      "http://localhost:5173", // for local dev
-      "https://project-mgnrega-frontend.onrender.com", // your Render frontend URL
+app.use(
+  cors({
+    origin: [
+      "http://localhost:5173", // local dev
+      "https://project-mgnrega-1.onrender.com", // ✅ your actual deployed frontend
     ],
-  methods: ["GET", "POST"],
-  credentials: true,
-}));
+    methods: ["GET", "POST"],
+    credentials: true,
+  })
+);
+
 
 
 // Routes
