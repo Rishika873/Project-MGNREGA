@@ -4,36 +4,37 @@ import dotenv from "dotenv";
 import cors from "cors";
 import authRoutes from "./routes/authRoutes.js";
 import mgnregaRoutes from "./routes/mgnregaRoutes.js";
-import geoRoutes from "./routes/geoRoutes.js"
+import geoRoutes from "./routes/geoRoutes.js";
 
 dotenv.config();
 const app = express();
 
 app.use(express.json());
+
+// ✅ Fix CORS (handles preflight correctly)
 app.use(
   cors({
     origin: [
-      "http://localhost:5173", // local dev
-      "https://project-mgnrega-1.onrender.com", // ✅ your actual deployed frontend
+      "http://localhost:5173",
+      "https://project-mgnrega-1.onrender.com", // your frontend Render URL
     ],
-    methods: ["GET", "POST"],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
   })
 );
 
+// ✅ Explicitly handle OPTIONS requests
+app.options("*", cors());
 
-
-// Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/mgnrega", mgnregaRoutes);
 app.use("/api/geo", geoRoutes);
 
-// Test route
 app.get("/", (req, res) => {
   res.send("✅ Backend is running successfully!");
 });
 
-// Connect MongoDB
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log("✅ MongoDB Connected"))
