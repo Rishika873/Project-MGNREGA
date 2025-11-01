@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 
 import { Loader2, Search, TrendingUp, Users, Briefcase, Award, Calendar, MapPin, ArrowUpRight, ArrowDownRight, IndianRupee, Hammer, UserCheck, Clock, Activity, Building2, Download, RefreshCw, AlertCircle } from "lucide-react";
+const baseURL = import.meta.env.VITE_API_URL;
 
 const Dashboard = () => {
   const [stateName, setStateName] = useState("");
@@ -25,7 +26,7 @@ const Dashboard = () => {
     setData([]);
 
     try {
-      const res = await fetch("http://localhost:5000/api/mgnrega/performance", {
+      const res = await fetch(`${baseURL}/api/mgnrega/performance`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

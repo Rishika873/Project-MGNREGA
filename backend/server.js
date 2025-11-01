@@ -11,7 +11,10 @@ const app = express();
 
 app.use(express.json());
 app.use(cors({
-  origin: "http://localhost:5173", // your React app URL
+origin: [
+      "http://localhost:5173", // for local dev
+      "https://project-mgnrega-frontend.onrender.com", // your Render frontend URL
+    ],
   methods: ["GET", "POST"],
   credentials: true,
 }));
