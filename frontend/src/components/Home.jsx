@@ -14,6 +14,7 @@ import BackgroundImage from "../assets/mgnrega01.jpg";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import axios from "axios";
+const baseURL = import.meta.env.VITE_API_URL;
 
 export default function Home({ stateName, districtName }) {
   const navigate = useNavigate();
@@ -27,7 +28,7 @@ export default function Home({ stateName, districtName }) {
     setLoading(true);
 
     try {
-      const res = await fetch("http://localhost:5000/api/mgnrega/performance", {
+      const res = await fetch(`${baseURL}/api/geo/reverse?lat=${lat}&lon=${lon}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ state, district }),

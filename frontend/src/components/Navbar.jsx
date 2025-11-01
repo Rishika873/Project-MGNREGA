@@ -15,6 +15,7 @@ import { logout, setUserFromToken } from "../redux/authSlice";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
 import { setLocation as setGlobalLocation } from "../redux/locationSlice";
+const baseURL = import.meta.env.VITE_API_URL;
 
 
 
@@ -50,7 +51,7 @@ const detectLocation = async () => {
 
         // ✅ Use correct variables here
         const res = await fetch(
-          `http://localhost:5000/api/geo/reverse?lat=${latitude}&lon=${longitude}`
+          `${baseURL}/api/geo/reverse?lat=${latitude}&lon=${longitude}`
         );
 
         if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
