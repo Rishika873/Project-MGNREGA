@@ -14,15 +14,13 @@ app.use(express.json());
 // ✅ Fix CORS (handles preflight correctly)
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173",
-      "https://project-mgnrega-1.onrender.com", // your frontend Render URL
-    ],
+    origin: process.env.FRONTEND_URL || "*",
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
   })
 );
+
 
 // ✅ Explicitly handle OPTIONS requests
 app.options("*", cors());
