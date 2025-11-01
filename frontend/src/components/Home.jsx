@@ -23,35 +23,40 @@ export default function Home({ stateName, districtName }) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const fetchData = async () => {
-    console.log("❌ HOME SENT:", { state, district });
-    setLoading(true);
+ const fetchData = async () => {
+  console.log("✅ HOME Sending to backend:", { state, district });
 
-    try {
-      const res = await fetch(`${baseURL}/api/geo/reverse?lat=${lat}&lon=${lon}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ state, district }),
-      });
+  if (!state || !district) {
+    console.warn("⚠️ State/District missing — cannot fetch data.");
+    return;
+  }
 
-      console.log("🟢 Response status:", res.status);
-      if (!res.ok) throw new Error("Failed to fetch data");
+  setLoading(true);
 
-      const json = await res.json();
+  try {
+    const res = await fetch(`${baseURL}/api/mgnrega/performance`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ state, district }),
+    });
 
-      if (json.records && json.records.length > 0) {
-        const latestRecord = json.records[0];
-        setData(latestRecord);
-      } else {
-        setData(null);
-      }
-    } catch (err) {
-      console.error("❌ Error fetching data:", err);
+    if (!res.ok) throw new Error("Failed to fetch data");
+
+    const json = await res.json();
+
+    if (json.records && json.records.length > 0) {
+      setData(json.records[0]);
+    } else {
       setData(null);
-    } finally {
-      setLoading(false);
     }
-  };
+  } catch (err) {
+    console.error("❌ Error fetching data:", err);
+    setData(null);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   useEffect(() => {
     console.log("Home.jsx Redux location:", state, district);
