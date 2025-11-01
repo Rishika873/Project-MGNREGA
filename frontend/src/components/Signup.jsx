@@ -166,12 +166,12 @@ const Signup = () => {
                 {language === "en"
                   ? "Already have an account?"
                   : "पहले से खाता है?"}{" "}
-                <a
-                  href="/login"
+                <button
+                  onClick={()=> navigate('/login')}
                   className="text-orange-700 font-semibold hover:underline"
                 >
                   {language === "en" ? "Login Here" : "यहां लॉगिन करें"}
-                </a>
+                </button>
               </p>
             </div>
           </div>
